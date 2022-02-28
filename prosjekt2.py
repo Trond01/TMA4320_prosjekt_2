@@ -10,6 +10,7 @@ som inneholder lastens posisjon relativt metasenteret. Lasten vil da animeres so
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import numpy as np
+from scipy.linalg import norm
 
 # M = metasenteret = midt paa dekk
 # C = skipets tyngdepunkt
@@ -17,6 +18,8 @@ import numpy as np
 
 R    = 10                   # skipets radius (m)
 h_CM = 4 * R / (3 * np.pi)  # avstand M - C
+sigma_0 = 1000
+sigma   = 500
 
 def init_anim():
     """ Initialises the animation.
@@ -98,4 +101,31 @@ def animate_deck_movement(t, theta, x_C, y_C, s_L=[], gjerde=False, stepsize=0.0
                                      blit=not vis_akse_verdier,
                                      fargs=(theta_anim, t_anim, x_C_anim, y_C_anim, s_L_anim, gjerde))
     plt.show()
+
+def newton(f, df, x0, tol=1.e-8, max_iter=30, variable = "x"):
+    """
+    brief: Solves the equation f(x)=0 with Newtons method
+    :param f: the function f(x)
+    :param df: the derivative of f(x)
+    :param x0: initial value
+    :param tol: tolerance, if f(x)<tol we accept x
+    :return: the accepted root, number of iterations
+    """
+    x = x0
+    for k in range(max_iter):
+        print(f"k ={k:3d}, {variable} = {x:18.15f}, f(x) = {f(x):10.3e}")
+        fx = f(x)
+        if norm(fx) < tol: # Accept solution 
+            break 
+        x = x - fx/df(x)   # One Newton-iteration
+    return x, k+1
+
+def f(b):
+    return b - np.sin(b) - np.pi*sigma/sigma_0
+def df(b):
+    return 1 - np.cos(b)
+
+beta = newton(f, df, 2, variable = "\u03B2")[0]
+yC0 = R*np.cos(beta/2) - 4*R/(3*np.pi)
+print(beta)
 
